@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Synchro — Pensez pareil</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chat.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         PAGE D'ACCUEIL
+    ========================== -->
+
+    <main id="home-page" class="page">
+
+        <div class="container">
+
+            <div class="logo">🎮</div>
+
+            <h1>SYNCHRO</h1>
+
+            <p class="subtitle">
+                Pensez à la même chose.<br>
+                Trouvez la même réponse.
+            </p>
+
+            <div class="input-group">
+
+                <label for="pseudo-input">
+                    TON PSEUDO
+                </label>
+
+                <input
+                    type="text"
+                    id="pseudo-input"
+                    placeholder="Ex : Pseudo"
+                    maxlength="20"
+                    autocomplete="off"
+                >
+
+            </div>
+
+            <div class="input-group">
+
+                <label for="pin-input">
+                    TON CODE PIN (4 CHIFFRES)
+                </label>
+
+                <input
+                    type="password"
+                    id="pin-input"
+                    placeholder="••••"
+                    maxlength="4"
+                    inputmode="numeric"
+                    autocomplete="off"
+                >
+
+            </div>
+
+            <p id="home-message" class="message"></p>
+
+            <div class="buttons">
+
+                <button id="resume-btn" class="primary-btn hidden">
+                    ↩ Reprendre ma partie
+                </button>
+
+                <button id="create-btn" class="primary-btn">
+                    ✨ Créer une partie
+                </button>
+
+                <button id="join-btn" class="secondary-btn">
+                    🔗 Rejoindre ou reprendre avec un code
+                </button>
+
+            </div>
+
+            <p class="footer">
+                Un jeu à deux • Pensez pareil
+            </p>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================
+         PAGE CRÉER UNE PARTIE
+    ========================== -->
+
+    <main id="create-page" class="page hidden">
+
+        <div class="container">
+
+            <div class="game-icon">🎮</div>
+
+            <h2>Ta partie est prête !</h2>
+
+            <p class="round-label">
+                Tu joues en tant que
+                <strong id="create-pseudo">-----</strong>
+            </p>
+
+            <p class="subtitle">
+                Partage ce code avec ton deuxième joueur.
+            </p>
+
+            <div class="code-box">
+
+                <span>CODE DE LA PARTIE</span>
+
+                <strong id="game-code">
+                    -----
+                </strong>
+
+            </div>
+
+            <button id="copy-btn" class="primary-btn">
+                📋 Copier le code
+            </button>
+
+            <p id="copy-message" class="message"></p>
+
+            <div class="waiting">
+
+                <div class="loader"></div>
+
+                <p>
+                    En attente du deuxième joueur...
+                </p>
+
+            </div>
+
+            <button id="back-from-create-btn" class="secondary-btn">
+                ← Retour
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================
+         PAGE REJOINDRE / REPRENDRE
+    ========================== -->
+
+    <main id="join-page" class="page hidden">
+
+        <div class="container">
+
+            <div class="game-icon">🔗</div>
+
+            <h2>Rejoindre ou reprendre</h2>
+
+            <p class="subtitle">
+                Entre le code de la partie.<br>
+                Pour reprendre, utilise le même pseudo et le même PIN que la dernière fois.
+            </p>
+
+            <div class="input-group">
+
+                <label for="join-code">
+                    CODE DE LA PARTIE
+                </label>
+
+                <input
+                    type="text"
+                    id="join-code"
+                    placeholder="Ex : K7P4X"
+                    maxlength="5"
+                    autocomplete="off"
+                >
+
+            </div>
+
+            <button id="join-game-btn" class="primary-btn">
+                🎮 Continuer
+            </button>
+
+            <p id="join-message" class="message"></p>
+
+            <button id="back-from-join-btn" class="secondary-btn">
+                ← Retour
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================
+         PAGE DU JEU
+    ========================== -->
+
+    <main id="game-page" class="page hidden">
+
+        <div class="container">
+
+            <div class="game-icon">🎮</div>
+
+            <p class="round-label">
+                Manche
+                <span id="round-number">1</span>
+                • Code
+                <span id="game-code-badge">-----</span>
+            </p>
+
+            <h2>Synchro</h2>
+
+            <p class="round-label">
+                Tu joues en tant que
+                <strong id="my-pseudo-badge">-----</strong>
+                • contre
+                <strong id="opponent-pseudo-badge">...</strong>
+            </p>
+
+
+            <!-- THÈME -->
+
+            <div class="theme-box">
+
+                <span>THÈME</span>
+
+                <strong id="theme">
+                    En attente...
+                </strong>
+
+            </div>
+
+
+            <!-- INSTRUCTION -->
+
+            <p class="game-instruction">
+                Pense à une réponse et écris-la
+                sans la montrer à ton partenaire.
+            </p>
+
+
+            <!-- RÉPONSE -->
+
+            <div class="input-group">
+
+                <label for="answer-input">
+                    TA RÉPONSE
+                </label>
+
+                <input
+                    type="text"
+                    id="answer-input"
+                    placeholder="Écris ta réponse..."
+                    autocomplete="off"
+                    maxlength="50"
+                    disabled
+                >
+
+            </div>
+
+
+            <!-- VALIDATION -->
+
+            <button
+                id="submit-answer-btn"
+                class="primary-btn"
+                disabled
+            >
+                ✓ Valider ma réponse
+            </button>
+
+            <p id="answer-message" class="message"></p>
+
+
+            <!-- SCORES -->
+
+            <div class="score-box">
+
+                <div>
+                    <span id="my-name">TOI</span>
+                    <strong id="my-score">0</strong>
+                </div>
+
+                <div>
+                    <span id="opponent-name">ADVERSAIRE</span>
+                    <strong id="opponent-score">0</strong>
+                </div>
+
+            </div>
+
+
+            <!-- LANCEMENT DE LA MANCHE -->
+
+            <div id="launch-box" class="result-box">
+
+                <button id="next-round-btn" class="primary-btn">
+                    ➜ Lancer la manche
+                </button>
+
+            </div>
+
+
+            <!-- RÉSULTAT -->
+
+            <div id="result-box" class="result-box hidden">
+
+                <h3 id="result-title">Résultat</h3>
+
+                <p id="result-text"></p>
+
+                <p id="result-answers"></p>
+
+            </div>
+
+
+            <!-- MESSAGERIE -->
+
+            <section class="chat">
+
+                <button id="chat-toggle-btn" class="secondary-btn chat-toggle">
+                    💬 Messagerie
+                    <span id="chat-unread" class="chat-unread hidden">0</span>
+                </button>
+
+                <div id="chat-panel" class="chat-panel hidden">
+
+                    <div id="chat-messages" class="chat-messages"></div>
+
+                    <div class="chat-form">
+
+                        <input
+                            type="text"
+                            id="chat-input"
+                            placeholder="Écris un message..."
+                            maxlength="500"
+                            autocomplete="off"
+                        >
+
+                        <button id="chat-send-btn" class="primary-btn">
+                            Envoyer
+                        </button>
+
+                    </div>
+
+                    <p id="chat-message" class="message"></p>
+
+                </div>
+
+            </section>
+
+
+            <!-- QUITTER -->
+
+            <button id="leave-btn" class="secondary-btn">
+                ← Quitter (reprise possible avec le code)
+            </button>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="/js/app.js"></script>
+
+</body>
+</html>
