@@ -25,7 +25,9 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      # Installation sans le fichier verrou : évite les erreurs liées à un
+      # package-lock.json créé sous Windows (modules natifs Linux manquants).
+      - run: npm install --no-package-lock --no-audit --no-fund
       - run: npm run build
 
       - uses: actions/configure-pages@v5
