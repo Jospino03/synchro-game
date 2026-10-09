@@ -38,7 +38,7 @@
                 <input
                     type="text"
                     id="pseudo-input"
-                    placeholder="Ex : Pseudo"
+                    placeholder="Ex : PSEUDO"
                     maxlength="20"
                     autocomplete="off"
                 >
@@ -291,6 +291,9 @@
             </div>
 
 
+            <p id="round-stats" class="round-stats"></p>
+
+
             <!-- LANCEMENT DE LA MANCHE -->
 
             <div id="launch-box" class="result-box">
@@ -319,10 +322,18 @@
 
             <section class="chat">
 
-                <button id="chat-toggle-btn" class="secondary-btn chat-toggle">
-                    💬 Messagerie
-                    <span id="chat-unread" class="chat-unread hidden">0</span>
-                </button>
+                <div class="chat-bar">
+
+                    <button id="chat-toggle-btn" class="secondary-btn chat-toggle">
+                        💬 Messagerie
+                        <span id="chat-unread" class="chat-unread hidden">0</span>
+                    </button>
+
+                    <button id="chat-sound-btn" class="secondary-btn chat-sound" title="Son des notifications">
+                        🔔
+                    </button>
+
+                </div>
 
                 <div id="chat-panel" class="chat-panel hidden">
 
@@ -360,6 +371,13 @@
         </div>
 
     </main>
+
+    <!-- NOTIFICATION DE MESSAGE -->
+
+    <div id="toast" class="toast hidden" role="status">
+        <strong id="toast-title"></strong>
+        <span id="toast-text"></span>
+    </div>
 
     <script type="module" src="/js/app.js"></script>
 

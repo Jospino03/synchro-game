@@ -63,6 +63,11 @@ const chatMessagesElement = $("chat-messages");
 const chatInput = $("chat-input");
 const chatSendBtn = $("chat-send-btn");
 const chatMessage = $("chat-message");
+const chatSoundBtn = $("chat-sound-btn");
+const roundStats = $("round-stats");
+const toast = $("toast");
+const toastTitle = $("toast-title");
+const toastText = $("toast-text");
 
 
 /* =========================================================
@@ -144,7 +149,10 @@ const chatState = {
     fetching: false,
     fetchAgain: false,
     sending: false,
-    firstLoadDone: false
+    firstLoadDone: false,
+    soundOn: true,
+    titleUnread: 0,
+    askedPermission: false
 };
 
 let gameChannel = null;
@@ -888,7 +896,39 @@ function renderScores() {
     myScoreElement.textContent = myScore || 0;
     opponentScoreElement.textContent = opponentScore || 0;
 
+    renderRoundStats();
+
     updateLaunchButton();
+}
+
+// Manches jouées = manches terminées ; chaque synchro donne +1 à chacun,
+// donc le score d'un joueur = nombre de synchros.
+function renderRoundStats() {
+
+    if (!currentSession || !gameStarted) {
+        roundStats.textContent = "";
+        return;
+    }
+
+    let played = 0;
+
+    if (currentRound) {
+        played = currentRound.result
+            ? currentRound.round_number
+            : currentRound.round_number - 1;
+    }
+
+    const synchros = currentSession.player1_score || 0;
+
+    if (played <= 0) {
+        roundStats.textContent = "Aucune manche jouée pour l'instant";
+        return;
+    }
+
+    const rate = Math.round((synchros / played) * 100);
+
+    roundStats.textContent =
+        `Manches jouées : ${played} • Synchros : ${synchros} (${rate} %)`;
 }
 
 function showWaitingForLaunch() {
@@ -959,6 +999,8 @@ function displayRound(round) {
     if (round.result) {
         displayResult(round);
     }
+
+    renderRoundStats();
 
     updateLaunchButton();
 }
@@ -1208,6 +1250,10 @@ function resetChat() {
     chatInput.value = "";
     chatPanel.classList.add("hidden");
 
+    chatState.titleUnread = 0;
+    document.title = BASE_TITLE;
+    hideToast();
+
     updateChatBadge();
 }
 
@@ -1277,6 +1323,7 @@ function renderChat() {
 function addChatMessages(list, notify) {
 
     let added = false;
+    const incoming = [];
 
     for (const message of list) {
 
@@ -1289,9 +1336,12 @@ function addChatMessages(list, notify) {
 
         added = true;
 
-        // Message de l'autre joueur pendant que la messagerie est fermée
-        if (notify && message.seat !== playerRole && !chatState.open) {
-            chatState.unread++;
+        // Message de l'autre joueur (et pas un ancien message rechargé)
+        if (notify && message.seat !== playerRole) {
+
+            incoming.push(message);
+
+            if (!chatState.open) chatState.unread++;
         }
     }
 
@@ -1301,6 +1351,8 @@ function addChatMessages(list, notify) {
 
     renderChat();
     updateChatBadge();
+
+    notifyIncoming(incoming);
 }
 
 async function fetchChat() {
@@ -1398,25 +1450,218 @@ async function sendChat() {
     }
 }
 
-chatToggleBtn.addEventListener("click", () => {
+function setChatOpen(open) {
 
-    chatState.open = !chatState.open;
+    chatState.open = open;
 
-    chatPanel.classList.toggle("hidden", !chatState.open);
+    chatPanel.classList.toggle("hidden", !open);
 
-    if (chatState.open) {
+    if (open) {
 
         chatState.unread = 0;
+
+        hideToast();
 
         renderChat();
 
         chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
 
         chatInput.focus();
+
+        askNotificationPermission();
     }
 
     updateChatBadge();
+}
+
+chatToggleBtn.addEventListener("click", () => {
+    setChatOpen(!chatState.open);
 });
+
+
+/* =========================================================
+   NOTIFICATIONS DE MESSAGE (bulle, son, titre de l'onglet)
+========================================================= */
+
+const KEY_SOUND = "synchro_chat_sound";
+const BASE_TITLE = document.title;
+
+let audioContext = null;
+let toastTimer = null;
+
+chatState.soundOn = localGet(KEY_SOUND) !== "0";
+
+function updateSoundButton() {
+
+    chatSoundBtn.textContent = chatState.soundOn ? "🔔" : "🔕";
+
+    chatSoundBtn.title = chatState.soundOn
+        ? "Son activé (cliquer pour couper)"
+        : "Son coupé (cliquer pour activer)";
+}
+
+function getAudioContext() {
+
+    try {
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioCtx) return null;
+
+        if (!audioContext) audioContext = new AudioCtx();
+
+        if (audioContext.state === "suspended") audioContext.resume();
+
+        return audioContext;
+
+    } catch {
+
+        return null;
+    }
+}
+
+// Petit « ding » généré par le navigateur (aucun fichier audio nécessaire)
+function playBeep() {
+
+    if (!chatState.soundOn) return;
+
+    const context = getAudioContext();
+
+    if (!context) return;
+
+    try {
+
+        const now = context.currentTime;
+
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(880, now);
+        oscillator.frequency.setValueAtTime(1175, now + 0.09);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+
+        oscillator.start(now);
+        oscillator.stop(now + 0.32);
+
+    } catch (error) {
+
+        console.error("Son impossible :", error);
+    }
+}
+
+function showToast(title, text) {
+
+    toastTitle.textContent = title;
+    toastText.textContent = text.length > 90 ? text.slice(0, 87) + "…" : text;
+
+    toast.classList.remove("hidden");
+
+    if (toastTimer) clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(hideToast, 5000);
+}
+
+function hideToast() {
+
+    if (toastTimer) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+    }
+
+    toast.classList.add("hidden");
+}
+
+// Demande une seule fois l'autorisation d'afficher une notification du
+// navigateur (utile quand l'onglet est en arrière-plan)
+function askNotificationPermission() {
+
+    if (chatState.askedPermission) return;
+
+    chatState.askedPermission = true;
+
+    if ("Notification" in window && Notification.permission === "default") {
+        try { Notification.requestPermission(); } catch { /* ignoré */ }
+    }
+}
+
+function notifyIncoming(incoming) {
+
+    if (!incoming.length) return;
+
+    const last = incoming[incoming.length - 1];
+    const opponent = getNames().opponent;
+    const tabHidden = document.hidden;
+
+    // Messagerie ouverte et onglet visible : le message est déjà sous les yeux
+    if (chatState.open && !tabHidden) return;
+
+    playBeep();
+
+    if (!tabHidden) {
+
+        showToast(`💬 ${opponent}`, last.body);
+
+        return;
+    }
+
+    // Onglet en arrière-plan : compteur dans le titre + notification système
+    chatState.titleUnread += incoming.length;
+
+    document.title = `(${chatState.titleUnread}) 💬 ${BASE_TITLE}`;
+
+    if ("Notification" in window && Notification.permission === "granted") {
+
+        try {
+
+            new Notification(`💬 ${opponent}`, {
+                body: last.body.slice(0, 120),
+                tag: "synchro-chat"
+            });
+
+        } catch { /* non supporté (certains mobiles) */ }
+    }
+}
+
+chatSoundBtn.addEventListener("click", () => {
+
+    chatState.soundOn = !chatState.soundOn;
+
+    localSet(KEY_SOUND, chatState.soundOn ? "1" : "0");
+
+    updateSoundButton();
+
+    if (chatState.soundOn) playBeep();
+});
+
+// Cliquer sur la bulle ouvre la messagerie
+toast.addEventListener("click", () => {
+
+    setChatOpen(true);
+
+    chatPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+// Retour sur l'onglet : on retire le compteur du titre
+document.addEventListener("visibilitychange", () => {
+
+    if (!document.hidden && chatState.titleUnread) {
+        chatState.titleUnread = 0;
+        document.title = BASE_TITLE;
+    }
+});
+
+// Les navigateurs exigent un geste de l'utilisateur avant de jouer un son :
+// le premier clic « débloque » l'audio pour la suite.
+document.addEventListener("pointerdown", () => { getAudioContext(); }, { once: true });
+
+updateSoundButton();
 
 chatSendBtn.addEventListener("click", sendChat);
 
